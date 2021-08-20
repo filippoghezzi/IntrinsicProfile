@@ -120,7 +120,8 @@ def Analyse_Spike(V, t, sr, spikeIdx, plotting=0):
     # AP threshold: first derivative method, 10mV/ms cut-off
     thresholdCutOff = 10 #mV/ms
     dV = np.insert(np.diff(V,n=1),0,0)
-    dV_peaks, _ = signal.find_peaks(dV,height=1)
+    dV_peaks, _ = signal.find_peaks(dV,height=0.7)
+    
     dV=dV*(sr/10**3) # Convert to mv/ms
     Th_idx = np.argmin(abs(dV[:dV_peaks[0]]-thresholdCutOff))
     AP_threshold = V[Th_idx]
@@ -170,7 +171,7 @@ def Analyse_Tau(V, I, t, sr, plotting=0):
 
     xfit = t[I_ON:I_OFF]
     yfit = V[I_ON:I_OFF]-np.mean(V[I_OFF-int(0.005*sr):I_OFF])
-    popt,pcov = optimize.curve_fit(mono_exp, xfit, yfit, method = 'lm', maxfev = 15000, ftol = 10**-10)
+    popt,pcov = optimize.curve_fit(mono_exp, xfit, yfit, method = 'lm', p0=(1.0,1.0), maxfev = 15000)
     Tau = 1/(-popt[1])     
     
     #Plot tau fitting
@@ -221,7 +222,8 @@ def Analyse_Neuron(neuron, plotting=0):
     
     # Tau        
     hyperpolarisingStepsIdx = np.array(neuronResults[(neuronResults.CurrentAmplitude >= -200)&(neuronResults.CurrentAmplitude < 0)].index, dtype=int)
-    medianV = np.median(V[hyperpolarisingStepsIdx,:],0)
+#     medianV = np.median(V[hyperpolarisingStepsIdx,:],0)
+    medianV = V[hyperpolarisingStepsIdx[-1],:]
     Tau = Analyse_Tau(medianV, I[0,:], t, sr, plotting)
     
     # Firing
